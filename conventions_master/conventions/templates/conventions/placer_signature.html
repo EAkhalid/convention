@@ -1,0 +1,138 @@
+{% extends 'conventions/base.html' %}
+
+{% block title %}Placer la signature{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-4xl bg-white rounded-lg shadow-lg p-6 border border-gray-100 flex flex-col items-center">
+    <h2 class="text-2xl font-bold text-gray-800 mb-2">Placement manuel de la signature</h2>
+    
+    <div class="flex items-center space-x-6 mb-4 bg-gray-100 py-2 px-6 rounded-full shadow-inner">
+        <button id="prev-page" class="text-blue-600 hover:text-blue-800 font-bold focus:outline-none disabled:opacity-50">
+            ⬅️ Précédent
+        </button>
+        <span class="font-bold text-gray-700">
+            Page <span id="page-num" class="text-blue-700 text-lg">1</span> sur <span id="page-count">--</span>
+        </span>
+        <button id="next-page" class="text-blue-600 hover:text-blue-800 font-bold focus:outline-none disabled:opacity-50">
+            Suivant ➡️
+        </button>
+    </div>
+
+    <p class="text-gray-600 mb-4 text-sm text-center">
+        Naviguez jusqu'à la dernière page, puis <strong>cliquez sur le document</strong> à l'endroit exact pour signer.
+    </p>
+
+    <div id="pdf-container" class="relative border-4 border-gray-300 cursor-crosshair shadow-md rounded overflow-hidden">
+        <canvas id="pdf-canvas"></canvas>
+        <div id="signature-marker" class="absolute hidden border-2 border-red-500 bg-red-100 bg-opacity-50 text-red-700 text-xs font-bold flex items-center justify-center pointer-events-none" style="width: 150px; height: 50px;">
+            Votre Tampon Ici
+        </div>
+    </div>
+
+    <form method="post" class="mt-8 w-full flex justify-between items-center bg-gray-50 p-4 rounded-md border">
+        {% csrf_token %}
+        <div class="text-sm font-mono text-gray-500 flex space-x-4">
+            <span>X: <input type="text" id="input_x" name="x_coord" readonly class="w-12 bg-transparent outline-none font-bold text-blue-600"></span>
+            <span>Y: <input type="text" id="input_y" name="y_coord" readonly class="w-12 bg-transparent outline-none font-bold text-blue-600"></span>
+            <span>Page: <input type="text" id="input_page" name="page_number" value="1" readonly class="w-8 bg-transparent outline-none font-bold text-blue-600"></span>
+        </div>
+        
+        <div class="space-x-4">
+            <a href="javascript:history.back()" class="text-gray-600 hover:text-gray-900 font-medium">Annuler</a>
+            <button type="submit" id="btn-valider" disabled class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-8 rounded shadow-md transition font-bold disabled:opacity-50 disabled:cursor-not-allowed">
+                Confirmer & Signer
+            </button>
+        </div>
+    </form>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+    const url = '{{ convention.document_pdf.url }}';
+    const canvas = document.getElementById('pdf-canvas');
+    const ctx = canvas.getContext('2d');
+    const marker = document.getElementById('signature-marker');
+    const inputX = document.getElementById('input_x');
+    const inputY = document.getElementById('input_y');
+    const inputPage = document.getElementById('input_page');
+    const btnValider = document.getElementById('btn-valider');
+
+    let pdfDoc = null;
+    let pageNum = 1;
+    let pageIsRendering = false;
+    let pageNumIsPending = null;
+    const scale = 1.2;
+
+    // Fonction pour afficher une page spécifique
+    function renderPage(num) {
+        pageIsRendering = true;
+        pdfDoc.getPage(num).then(page => {
+            const viewport = page.getViewport({ scale: scale });
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            const renderContext = { canvasContext: ctx, viewport: viewport };
+            const renderTask = page.render(renderContext);
+
+            renderTask.promise.then(() => {
+                pageIsRendering = false;
+                if (pageNumIsPending !== null) {
+                    renderPage(pageNumIsPending);
+                    pageNumIsPending = null;
+                }
+            });
+        });
+
+        // Mettre à jour les compteurs
+        document.getElementById('page-num').textContent = num;
+        inputPage.value = num; // On injecte le numéro de page dans le formulaire
+
+        // Cacher le tampon si on change de page et désactiver le bouton
+        marker.classList.add('hidden');
+        btnValider.disabled = true;
+    }
+
+    // Chargement initial du PDF
+    pdfjsLib.getDocument(url).promise.then(pdfDoc_ => {
+        pdfDoc = pdfDoc_;
+        document.getElementById('page-count').textContent = pdfDoc.numPages;
+        
+        // Aller directement à la dernière page (Pratique pour les conventions !)
+        pageNum = pdfDoc.numPages;
+        renderPage(pageNum);
+    });
+
+    // Boutons Précédent / Suivant
+    document.getElementById('prev-page').addEventListener('click', () => {
+        if (pageNum <= 1) return;
+        pageNum--;
+        renderPage(pageNum);
+    });
+
+    document.getElementById('next-page').addEventListener('click', () => {
+        if (pageNum >= pdfDoc.numPages) return;
+        pageNum++;
+        renderPage(pageNum);
+    });
+
+    // Clic pour placer la signature
+    canvas.addEventListener('click', function(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+
+        marker.style.left = clickX + 'px';
+        marker.style.top = clickY + 'px';
+        marker.classList.remove('hidden');
+
+        const pdfX = clickX / scale;
+        const pdfY = ((canvas.height - clickY) / scale) - 50; 
+
+        inputX.value = Math.round(pdfX);
+        inputY.value = Math.round(pdfY);
+        btnValider.disabled = false;
+    });
+</script>
+{% endblock %}

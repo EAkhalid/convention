@@ -1,0 +1,20 @@
+<div class="bg-gray-50 p-4 rounded-lg mb-6 flex flex-wrap items-center justify-between border border-gray-200">
+    <form method="get" class="flex items-center space-x-4">
+        <label class="text-sm font-bold text-gray-700">Filtrer par année d'inscription :</label>
+        <select name="annee" onchange="this.form.submit()" class="border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            <option value="">Toutes les années</option>
+            {% for annee in annees_disponibles %}
+                <option value="{{ annee }}" {% if annee|stringformat:"s" == annee_selectionnee %}selected{% endif %}>
+                    {{ annee }}
+                </option>
+            {% endfor %}
+        </select>
+        {% if annee_selectionnee %}
+            <a href="{% url 'liste_mobilites' %}" class="text-xs text-red-600 hover:underline">Réinitialiser</a>
+        {% endif %}
+    </form>
+    
+    <div class="text-sm text-gray-500">
+        Nombre de dossiers : <span class="font-bold text-blue-600">{{ mobilites.count }}</span>
+    </div>
+</div>

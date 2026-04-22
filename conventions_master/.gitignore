@@ -1,0 +1,9 @@
+# Créer et remplir le fichier .gitignore d'un seul coup
+env/
+__pycache__/
+*.sqlite3
+.env
+*.pdf
+media/
+EOT
+keystore/

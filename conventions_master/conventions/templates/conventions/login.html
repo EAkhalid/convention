@@ -1,0 +1,36 @@
+{% extends 'conventions/base.html' %}
+
+{% block title %}Connexion - Conventions{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-md bg-white rounded-lg shadow-lg p-8 border border-gray-100">
+    <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Connexion</h2>
+    
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        
+        <div>
+            <label for="id_username" class="block text-sm font-medium text-gray-700 mb-1">Nom d'utilisateur</label>
+            <input type="text" name="username" id="id_username" required
+                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+        </div>
+
+        <div>
+            <label for="id_password" class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+            <input type="password" name="password" id="id_password" required
+                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+        </div>
+
+        <button type="submit"
+            class="w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2 px-4 rounded-md transition duration-200 shadow-md">
+            Se connecter
+        </button>
+    </form>
+    
+    {% if form.errors %}
+    <div class="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm text-center">
+        Identifiants incorrects. Veuillez réessayer.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

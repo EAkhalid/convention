@@ -1,0 +1,108 @@
+{% extends "conventions/base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto mt-8 px-4">
+    
+    <div class="flex justify-between items-center mb-8">
+        <h2 class="text-3xl font-bold text-gray-800">Gestion des Mobilités Doctorales</h2>
+        <a href="{% url 'ajouter_mobilite' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold shadow transition">
+            + Nouvelle Mobilité
+        </a>
+    </div>
+
+    <div class="flex space-x-4 mb-6">
+        <a href="?archives=0" class="px-4 py-2 rounded-lg {% if not voir_archives %}bg-blue-600 text-white font-bold shadow{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %} transition">
+            📁 Dossiers Actifs
+        </a>
+        <a href="?archives=1" class="px-4 py-2 rounded-lg {% if voir_archives %}bg-gray-600 text-white font-bold shadow{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %} transition">
+            📦 Archives
+        </a>
+    </div>
+
+    <div class="bg-white p-4 rounded-xl shadow-sm border mb-6">
+        <form method="get" class="flex flex-wrap gap-4 items-end">
+            <input type="hidden" name="archives" value="{{ voir_archives|yesno:'1,0' }}">
+            
+            <div class="flex-1 min-w-[250px]">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Rechercher</label>
+                <input type="text" name="search" value="{{ query }}" placeholder="Nom du doctorant ou laboratoire..." 
+                       class="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div class="w-48">
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Année d'inscription</label>
+                <select name="annee" class="w-full border-gray-300 rounded-lg">
+                    <option value="">Toutes</option>
+                    {% for a in annees_disponibles %}
+                    <option value="{{ a }}" {% if a|stringformat:"s" == annee_selectionnee %}selected{% endif %}>{{ a }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="bg-gray-800 text-white px-6 py-2 rounded-lg font-bold hover:bg-gray-900">Filtrer</button>
+            <a href="{% url 'dashboard_mobilite' %}" class="text-gray-500 text-sm hover:underline mb-2">Réinitialiser</a>
+        </form>
+    </div>
+
+    <div class="bg-white shadow-md rounded-xl overflow-hidden border">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Doctorant</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Détails Mobilité</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Dates</th>
+                    <th class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase">Document</th>
+                    <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for m in mobilites %}
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-gray-900">{{ m.doctorant.get_full_name }}</div>
+                        <div class="text-xs text-gray-500">Inscrit en : {{ m.annee_premiere_inscription }}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-medium text-blue-700">{{ m.laboratoire_accueil }}</div>
+                        <div class="text-xs text-gray-500">{{ m.ville_pays }}</div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600">
+                        {{ m.date_debut|date:"d/m/Y" }} - {{ m.date_fin|date:"d/m/Y" }}
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        {% if m.contrat_signe %}
+                        <a href="{{ m.contrat_signe.url }}" target="_blank" class="text-green-600 hover:text-green-800">
+                            <svg class="w-6 h-6 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" stroke-width="2"></path></svg>
+                        </a>
+                        {% else %}
+                        <span class="text-red-400 text-xs font-bold italic">Manquant</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-right space-x-1">
+                        <a href="{% url 'archiver_mobilite' m.id %}" title="{% if m.est_archive %}Restaurer{% else %}Archiver{% endif %}" 
+                           class="p-2 rounded-full inline-block transition {% if m.est_archive %}text-green-600 hover:bg-green-100{% else %}text-gray-400 hover:bg-gray-100{% endif %}">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
+                            </svg>
+                        </a>
+
+                        <a href="{% url 'modifier_mobilite' m.id %}" class="text-blue-600 hover:bg-blue-100 p-2 rounded-full inline-block transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        </a>
+
+                        <form action="{% url 'supprimer_mobilite' m.id %}" method="post" class="inline" onsubmit="return confirm('Voulez-vous vraiment supprimer cette mobilité ?');">
+                            {% csrf_token %}
+                            <button type="submit" class="text-red-600 hover:bg-red-100 p-2 rounded-full transition">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="py-10 text-center text-gray-400 italic">Aucun résultat trouvé.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

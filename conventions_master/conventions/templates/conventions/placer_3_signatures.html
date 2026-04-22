@@ -1,0 +1,189 @@
+{% extends 'conventions/base.html' %}
+{% block title %}Placement des Signatures{% endblock %}
+
+{% block content %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+<div class="flex flex-col items-center max-w-5xl mx-auto">
+    <h2 class="text-2xl font-black text-gray-800 mb-2">Mise en page des Signatures</h2>
+    <p class="text-gray-600 mb-4">Naviguez dans le document et cliquez pour placer les signatures.</p>
+
+    <div id="instruction-box" class="bg-blue-100 text-blue-800 p-4 rounded-lg mb-4 font-bold border border-blue-300 w-full text-center text-lg shadow-sm">
+        Étape 1/3 : Cliquez pour placer la signature de l'ENCADRANT (Bleu)
+    </div>
+
+    <div class="flex items-center space-x-4 mb-4 bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+        <button id="prev-page" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded transition">⬅ Précédent</button>
+        <span class="font-bold text-gray-700">Page <span id="page-num" class="text-blue-600">1</span> sur <span id="page-count">?</span></span>
+        <button id="next-page" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded transition">Suivant ➡</button>
+    </div>
+
+    <form method="post" id="signature-form" class="mb-6 flex space-x-4">
+        {% csrf_token %}
+        <input type="hidden" name="x_enc" id="x_enc"><input type="hidden" name="y_enc" id="y_enc"><input type="hidden" name="page_enc" id="page_enc">
+        <input type="hidden" name="x_coo" id="x_coo"><input type="hidden" name="y_coo" id="y_coo"><input type="hidden" name="page_coo" id="page_coo">
+        <input type="hidden" name="x_doy" id="x_doy"><input type="hidden" name="y_doy" id="y_doy"><input type="hidden" name="page_doy" id="page_doy">
+        
+        <button type="submit" id="btn-valider" class="bg-gray-400 text-white font-bold py-3 px-8 rounded-lg shadow cursor-not-allowed transition duration-300" disabled>
+            Confirmer l'emplacement
+        </button>
+        <button type="button" id="btn-reset" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 py-3 px-6 rounded-lg font-bold transition">
+            Recommencer
+        </button>
+        <input type="hidden" name="x_qr" id="x_qr">
+        <input type="hidden" name="y_qr" id="y_qr">
+        <input type="hidden" name="page_qr" id="page_qr">
+        
+    </form>
+<input type="hidden" name="action" id="action_input" value="approuver">
+
+<div class="flex items-center space-x-2 border-r pr-4 mr-4 border-gray-300">
+    <input type="text" name="motif_rejet" placeholder="Motif si refus" class="px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none">
+    <button type="button" onclick="document.getElementById('action_input').value='refuser'; document.getElementById('signature-form').submit();" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow transition">
+        Refuser
+    </button>
+</div>
+    <div class="relative border-4 border-gray-300 shadow-xl bg-white" id="pdf-container" style="cursor: crosshair;">
+        <canvas id="pdf-canvas"></canvas>
+        <div id="markers-container" class="absolute top-0 left-0 w-full h-full pointer-events-none"></div>
+    </div>
+</div>
+
+<script>
+    const url = "{{ convention.document_pdf.url }}";
+    
+    // Configuration PDF.js
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+    let pdfDoc = null,
+        pageNum = 1,
+        pageIsRendering = false,
+        pageNumIsPending = null;
+
+    const scale = 1.3; // Zoom du PDF
+    const canvas = document.getElementById('pdf-canvas');
+    const ctx = canvas.getContext('2d');
+    const markersContainer = document.getElementById('markers-container');
+    
+    let placedMarkers = []; // Pour mémoriser les marqueurs
+    let clickStep = 1;
+
+    // Rendu de la page
+    const renderPage = num => {
+        pageIsRendering = true;
+        pdfDoc.getPage(num).then(page => {
+            const viewport = page.getViewport({ scale });
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            const renderCtx = { canvasContext: ctx, viewport: viewport };
+            page.render(renderCtx).promise.then(() => {
+                pageIsRendering = false;
+                if (pageNumIsPending !== null) {
+                    renderPage(pageNumIsPending);
+                    pageNumIsPending = null;
+                }
+            });
+
+            document.getElementById('page-num').textContent = num;
+            redessinerMarqueurs(); // Affiche les points posés sur cette page
+        });
+    };
+
+    const queueRenderPage = num => {
+        if (pageIsRendering) { pageNumIsPending = num; } else { renderPage(num); }
+    };
+
+    // Boutons Précédent / Suivant
+    document.getElementById('prev-page').addEventListener('click', () => {
+        if (pageNum <= 1) return;
+        pageNum--;
+        queueRenderPage(pageNum);
+    });
+
+    document.getElementById('next-page').addEventListener('click', () => {
+        if (pageNum >= pdfDoc.numPages) return;
+        pageNum++;
+        queueRenderPage(pageNum);
+    });
+
+    // Chargement du PDF
+    pdfjsLib.getDocument(url).promise.then(pdfDoc_ => {
+        pdfDoc = pdfDoc_;
+        document.getElementById('page-count').textContent = pdfDoc.numPages;
+        renderPage(pageNum);
+    });
+
+   canvas.addEventListener('click', (e) => {
+        if(clickStep > 4) return; // NOUVEAU : On passe à 4 clics max !
+
+        const rect = canvas.getBoundingClientRect();
+        const visualX = e.clientX - rect.left;
+        const visualY = e.clientY - rect.top;
+
+        const unscaledX = visualX / scale;
+        const unscaledY = visualY / scale;
+        const pdfX = unscaledX;
+        const pdfY = (canvas.height / scale) - unscaledY;
+
+        let couleur = "", texte = "", prefixe = "";
+
+        if(clickStep === 1) {
+            prefixe = "enc"; couleur = "#3B82F6"; texte = "Encadrant";
+            document.getElementById('instruction-box').className = "bg-green-100 text-green-800 p-4 rounded-lg mb-4 font-bold border border-green-300 w-full text-center text-lg";
+            document.getElementById('instruction-box').innerHTML = "Étape 2/4 : Cliquez pour placer la signature du COORDINATEUR (Vert)";
+        } else if(clickStep === 2) {
+            prefixe = "coo"; couleur = "#10B981"; texte = "Coord.";
+            document.getElementById('instruction-box').className = "bg-purple-100 text-purple-800 p-4 rounded-lg mb-4 font-bold border border-purple-300 w-full text-center text-lg";
+            document.getElementById('instruction-box').innerHTML = "Étape 3/4 : Cliquez pour placer la signature du VICE-DOYEN (Violet)";
+        } else if(clickStep === 3) {
+            prefixe = "doy"; couleur = "#6366F1"; texte = "Doyen";
+            document.getElementById('instruction-box').className = "bg-orange-100 text-orange-800 p-4 rounded-lg mb-4 font-bold border border-orange-300 w-full text-center text-lg shadow-sm";
+            document.getElementById('instruction-box').innerHTML = "Étape 4/4 : Cliquez pour placer le futur QR CODE (Orange)";
+        } else if(clickStep === 4) {
+            prefixe = "qr"; couleur = "#F97316"; texte = "QR Code"; // Orange
+            document.getElementById('instruction-box').className = "bg-gray-800 text-white p-4 rounded-lg mb-4 font-bold w-full text-center text-lg shadow-md";
+            document.getElementById('instruction-box').innerHTML = "✅ Terminé ! Vous pouvez valider l'emplacement.";
+            
+            document.getElementById('btn-valider').disabled = false;
+            document.getElementById('btn-valider').className = "bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg cursor-pointer transform hover:scale-105 transition duration-300";
+        }
+
+        document.getElementById(`x_${prefixe}`).value = pdfX;
+        document.getElementById(`y_${prefixe}`).value = pdfY;
+        document.getElementById(`page_${prefixe}`).value = pageNum;
+
+        placedMarkers.push({ page: pageNum, visualX: visualX, visualY: visualY, couleur: couleur, texte: texte });
+        redessinerMarqueurs();
+        
+        clickStep++;
+    });
+
+    // Fonction pour afficher les points
+    function redessinerMarqueurs() {
+        markersContainer.innerHTML = '';
+        placedMarkers.forEach(m => {
+            if (m.page === pageNum) {
+                const div = document.createElement('div');
+                div.style = `position:absolute; left:${m.visualX-8}px; top:${m.visualY-8}px; width:16px; height:16px; background-color:${m.couleur}; border-radius:50%; box-shadow:0 0 0 4px white;`;
+                const label = document.createElement('span');
+                label.style = `position:absolute; left:24px; top:-4px; background-color:${m.couleur}; color:white; font-size:12px; font-weight:bold; padding:4px 8px; border-radius:4px; white-space:nowrap;`;
+                label.innerText = m.texte;
+                div.appendChild(label);
+                markersContainer.appendChild(div);
+            }
+        });
+    }
+
+    // Bouton Recommencer
+    document.getElementById('btn-reset').addEventListener('click', () => {
+        clickStep = 1;
+        placedMarkers = [];
+        redessinerMarqueurs();
+        document.getElementById('btn-valider').disabled = true;
+        document.getElementById('btn-valider').className = "bg-gray-400 text-white font-bold py-3 px-8 rounded-lg shadow cursor-not-allowed";
+        document.getElementById('instruction-box').className = "bg-blue-100 text-blue-800 p-4 rounded-lg mb-4 font-bold border border-blue-300 w-full text-center text-lg";
+        document.getElementById('instruction-box').innerHTML = "Étape 1/3 : Cliquez pour placer la signature de l'ENCADRANT (Bleu)";
+    });
+</script>
+{% endblock %}

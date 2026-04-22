@@ -1,0 +1,9 @@
+<div class="flex justify-between items-center p-4 bg-red-50 border-l-4 border-red-500 mb-2">
+    <div>
+        <span class="font-bold">{{ alerte.doctorant.get_full_name }}</span> 
+        <span class="text-sm text-gray-600">({{ alerte.laboratoire_accueil }})</span>
+    </div>
+    <a href="mailto:{{ alerte.doctorant.email }}" class="text-blue-600 hover:underline text-sm font-bold">
+        📧 Envoyer un rappel
+    </a>
+</div>

@@ -1,0 +1,34 @@
+{% extends 'conventions/base.html' %}
+
+{% block title %}Nouvelle Convention{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-2xl bg-white rounded-lg shadow-lg p-8 border border-gray-100">
+    <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Déposer une nouvelle convention</h2>
+    
+    <form method="post" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+        
+        <div class="bg-blue-50 p-4 rounded-md border border-blue-100">
+            <h3 class="text-lg font-semibold text-blue-800 mb-4">Informations de l'Entreprise</h3>
+            <div class="space-y-4">
+                {{ form_entreprise.as_p }}
+            </div>
+        </div>
+
+        <div class="bg-green-50 p-4 rounded-md border border-green-100">
+            <h3 class="text-lg font-semibold text-green-800 mb-4">Détails du Stage & Document</h3>
+            <div class="space-y-4">
+                {{ form_convention.as_p }}
+            </div>
+        </div>
+
+        <div class="flex justify-end pt-4">
+            <button type="submit"
+                class="bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2 px-6 rounded-md transition duration-200 shadow-md">
+                Soumettre la convention
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

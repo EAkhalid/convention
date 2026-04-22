@@ -1,0 +1,119 @@
+{% extends 'conventions/base.html' %}
+
+{% block title %}Espace Administration{% endblock %}
+<div class="mt-4 mb-8">
+    <a href="{% url 'dashboard_mobilite' %}" class="inline-flex items-center px-4 py-2 bg-red-50 text-red-700 border border-red-200 rounded-md font-bold hover:bg-red-100 transition shadow-sm">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        Suivi des Mobilités & Alertes
+    </a>
+</div>
+{% block content %}
+<div class="mb-8">
+    <h2 class="text-3xl font-black text-gray-800">Espace Administration</h2>
+    <p class="text-gray-600 mt-2">Vérification des dossiers et placement du bloc global des signatures (Encadrant, Coordinateur, Administration).</p>
+</div>
+
+<div class="mb-12">
+    <h3 class="text-xl font-bold text-gray-700 mb-6 flex items-center border-b pb-2">
+        <span class="bg-teal-100 text-teal-700 p-2 rounded-lg mr-3">⏳</span>
+        Conventions à préparer ({{ attente|length }})
+    </h3>
+
+    {% if attente %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for convention in attente %}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition">
+            <div class="bg-teal-50 px-5 py-4 border-b border-teal-100 flex justify-between items-center">
+                <span class="font-bold text-teal-800">Dossier #{{ convention.id }}</span>
+                <span class="text-xs font-bold bg-white text-teal-600 px-2 py-1 rounded-full border border-teal-200">Étape 3/4</span>
+            </div>
+            
+            <div class="p-5">
+                <p class="font-bold text-gray-800 text-lg mb-1">{{ convention.etudiant.first_name }} {{ convention.etudiant.last_name }}</p>
+                <p class="text-sm text-gray-500 mb-4">🎓 {{ convention.etudiant.filiere|default:"Non renseignée" }}</p>
+                
+                <div class="bg-gray-50 p-3 rounded text-sm text-gray-700 mb-4 border border-gray-100">
+                    <p><span class="font-semibold">🏢 Entreprise:</span> {{ convention.entreprise.nom }}</p>
+                    <p><span class="font-semibold">📅 Déposé le:</span> {{ convention.date_creation|date:"d/m/Y" }}</p>
+                </div>
+
+                <div class="flex space-x-3 mt-5">
+                    <a href="{% url 'telecharger_convention' convention.id %}" target="_blank" class="flex-1 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 py-2 px-2 rounded shadow-sm transition font-medium flex justify-center items-center text-sm">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        Lire PDF
+                    </a>
+
+                    <a href="{% url 'valider_administrateur' convention.id %}" class="flex-[2] bg-teal-600 hover:bg-teal-700 text-white py-2 px-2 rounded shadow-md transition font-bold flex justify-center items-center text-sm">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                        Placer les Signatures
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-lg border border-dashed border-gray-300 p-10 text-center text-gray-500">
+        <p class="text-lg">Aucune convention en attente de placement.</p>
+        <p class="text-sm mt-2">Vous êtes à jour dans vos dossiers !</p>
+    </div>
+    {% endif %}
+</div>
+
+<div>
+    <h3 class="text-xl font-bold text-gray-700 mb-6 flex items-center border-b pb-2">
+        <span class="bg-gray-100 text-gray-700 p-2 rounded-lg mr-3">✅</span>
+        Historique des dossiers préparés ({{ validees|length }})
+    </h3>
+
+    {% if validees %}
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Étudiant</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entreprise</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut final</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Document</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for convention in validees %}
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="font-bold text-gray-800">{{ convention.etudiant.first_name }} {{ convention.etudiant.last_name }}</div>
+                        <div class="text-xs text-gray-500">{{ convention.etudiant.filiere|default:"-" }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {{ convention.entreprise.nom }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {{ convention.date_mise_a_jour|date:"d M Y" }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if convention.statut == 3 %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                Chez le Vice-Doyen
+                            </span>
+                        {% else %}
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                Scellé par le Doyen
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a href="{% url 'telecharger_convention' convention.id %}" target="_blank" class="text-blue-600 hover:text-blue-900 bg-blue-50 py-1 px-3 rounded hover:bg-blue-100 transition">
+                            Ouvrir le PDF
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-gray-500 italic">Aucun dossier dans l'historique.</p>
+    {% endif %}
+</div>
+{% endblock %}

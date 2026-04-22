@@ -1,0 +1,159 @@
+{% extends 'conventions/base.html' %}
+
+{% block title %}Espace Vice-Doyen - Validation Finale{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-5xl bg-white rounded-lg shadow-lg p-8 border border-gray-100">
+    <h2 class="text-2xl font-bold text-gray-800 mb-8 border-b-4 border-yellow-500 pb-4 uppercase tracking-wider">
+        Direction - Validation Finale des Conventions
+    </h2>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-sm text-blue-500 font-bold uppercase">Total Conventions</p>
+                <p class="text-3xl font-black text-blue-900">{{ total_conventions }}</p>
+            </div>
+            <div class="text-blue-300 text-4xl">📄</div>
+        </div>
+        <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-100 shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-sm text-yellow-600 font-bold uppercase">En cours (Signatures)</p>
+                <p class="text-3xl font-black text-yellow-800">{{ conventions_en_cours }}</p>
+            </div>
+            <div class="text-yellow-400 text-4xl">⏳</div>
+        </div>
+        <div class="bg-green-50 p-4 rounded-lg border border-green-100 shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-sm text-green-600 font-bold uppercase">Validées (Scellées)</p>
+                <p class="text-3xl font-black text-green-800">{{ conventions_terminees }}</p>
+            </div>
+            <div class="text-green-400 text-4xl">✅</div>
+        </div>
+        <div class="bg-purple-50 p-4 rounded-lg border border-purple-100 shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-sm text-purple-600 font-bold uppercase">Entreprises Partenaires</p>
+                <p class="text-3xl font-black text-purple-900">{{ total_entreprises }}</p>
+            </div>
+            <div class="text-purple-300 text-4xl">🏢</div>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm mb-10 flex flex-col items-center">
+        <h3 class="text-lg font-bold text-gray-700 mb-4">Répartition des conventions par filière</h3>
+        <div class="w-full max-w-md">
+            <canvas id="filiereChart"></canvas>
+        </div>
+    </div>
+    <h3 class="text-xl font-semibold text-blue-900 mb-4 flex items-center">
+        <svg class="w-6 h-6 mr-2 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"></path></svg>
+        Dossiers en attente de signature finale (Décanat)
+    </h3>
+    
+    {% if attente %}
+        <div class="grid gap-6 mb-12">
+            {% for convention in attente %}
+                <div class="bg-blue-50 border-l-8 border-yellow-500 rounded-r-lg p-6 flex justify-between items-center shadow-lg transition hover:scale-[1.01]">
+                    <div>
+                        <h4 class="text-lg font-black text-blue-900 uppercase">{{ convention.etudiant.first_name }} {{ convention.etudiant.last_name }}</h4>
+                        <p class="text-gray-800"><strong>Stage chez :</strong> {{ convention.entreprise.nom }}</p>
+                        <p class="text-gray-600 text-sm">Filière : {{ convention.etudiant.filiere }}</p>
+                        <div class="mt-2 space-x-2">
+                            <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">✓ Encadrant</span>
+                            <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">✓ Coordinateur</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col space-y-3">
+                        <a href="{{ convention.document_pdf.url }}" target="_blank" class="text-center text-blue-800 underline text-sm font-bold">
+                            Inspecter le Document
+                        </a>
+                        
+                        <div class="flex space-x-3 mt-5">
+    <a href="{% url 'telecharger_convention' convention.id %}" target="_blank" class="flex-1 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 py-2 px-2 rounded shadow-sm transition font-medium flex justify-center items-center text-sm">
+        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+        Lire PDF
+    </a>
+
+    <form method="post" action="{% url 'valider_vice_doyen' convention.id %}" class="flex-[2] m-0">
+        {% csrf_token %}
+        <button type="submit" class="w-full h-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-2 rounded shadow-md transition font-bold flex justify-center items-center text-sm">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            Sceller le document
+        </button>
+    </form>
+</div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="bg-gray-100 p-8 text-center rounded-lg border-2 border-dashed border-gray-300 mb-12">
+            <p class="text-gray-500 font-bold">Aucune convention n'est actuellement en attente de signature décanale.</p>
+        </div>
+    {% endif %}
+
+    <h3 class="text-xl font-semibold text-gray-500 mb-4 italic">Historique des conventions scellées</h3>
+    {% if validees %}
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden opacity-75">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Étudiant</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Filière</th>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Date Signature</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for convention in validees %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{{ convention.etudiant.last_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ convention.etudiant.filiere }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-bold italic">
+                                Scellé le {{ convention.date_mise_a_jour|date:"d/m/Y H:i" }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('filiereChart').getContext('2d');
+        
+        // Récupération des données injectées par Django (sécurisées avec le filtre safe)
+        const labels = {{ noms_filieres|safe }};
+        const data = {{ comptes_filieres|safe }};
+        
+        new Chart(ctx, {
+            type: 'doughnut', // Type de graphique (donut)
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: [
+                        '#3B82F6', // Bleu
+                        '#F59E0B', // Jaune
+                        '#10B981', // Vert
+                        '#8B5CF6', // Violet
+                        '#EF4444', // Rouge
+                        '#6B7280'  // Gris
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

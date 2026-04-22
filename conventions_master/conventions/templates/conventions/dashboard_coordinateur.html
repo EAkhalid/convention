@@ -1,0 +1,39 @@
+<form method="post" action="{% url 'valider_coordinateur' convention.id %}" class="flex-1 m-0 flex flex-col space-y-2">
+    {% csrf_token %}
+    
+    {% if not convention.enseignant %}
+        <div class="bg-blue-50 p-2 rounded border border-blue-200 mb-2">
+            <p class="text-xs font-bold text-blue-800 mb-1">Désigner un Encadrant :</p>
+            <select name="nouvel_encadrant" class="w-full text-xs p-1 border rounded mb-1">
+                <option value="">-- Choisir un professeur --</option>
+                {% for prof in enseignants %}
+                    <option value="{{ prof.id }}">Pr. {{ prof.last_name }} {{ prof.first_name }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" name="assigner_encadrant" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-1 px-2 rounded font-bold text-xs">
+                Assigner et envoyer au prof
+            </button>
+        </div>
+        
+        <div class="relative flex py-1 items-center">
+            <div class="flex-grow border-t border-gray-300"></div>
+            <span class="flex-shrink-0 mx-2 text-gray-400 text-xs text-center font-bold">OU</span>
+            <div class="flex-grow border-t border-gray-300"></div>
+        </div>
+    {% endif %}
+
+    <button type="submit" name="approuver" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-2 rounded font-bold text-sm">
+        {% if convention.enseignant %}
+            Valider (Avis Favorable)
+        {% else %}
+            Valider SANS encadrant
+        {% endif %}
+    </button>
+    
+    <div class="border-t border-gray-200 pt-2 mt-2">
+        <input type="text" name="motif_rejet" placeholder="Motif du refus (Optionnel)" class="w-full text-xs px-2 py-1 border border-gray-300 rounded mb-1">
+        <button type="submit" name="refuser" class="w-full bg-red-100 hover:bg-red-600 text-red-700 hover:text-white border border-red-200 py-1 px-2 rounded transition font-bold text-xs">
+            Refuser le dossier
+        </button>
+    </div>
+</form>

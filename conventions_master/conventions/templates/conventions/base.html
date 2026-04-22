@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gestion des Conventions{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <header class="bg-blue-800 text-white shadow-md">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            
+            <div>
+                <h1 class="text-xl font-bold tracking-wider">Faculté - Conventions de Stage</h1>
+            </div>
+
+            {% if request.user.is_authenticated %}
+            <div class="flex items-center space-x-6">
+
+                <div class="relative inline-block text-left group">
+                    <button class="flex items-center text-blue-200 hover:text-white focus:outline-none transition">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                        
+                        {% if nb_notifs > 0 %}
+                            <span class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full shadow-sm">
+                                {{ nb_notifs }}
+                            </span>
+                        {% endif %}
+                    </button>
+                    
+                    <div class="absolute right-0 w-64 mt-2 origin-top-right bg-white rounded-md shadow-lg border border-gray-100 hidden group-hover:block z-50 text-gray-800">
+                        <div class="py-2">
+                            <p class="px-4 py-2 text-sm font-bold text-gray-800 border-b">Notifications</p>
+                            {% if nb_notifs > 0 %}
+                                {% for notif in notifs_non_lues %}
+                                    <a href="{{ notif.lien }}" class="block px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition">
+                                        {{ notif.message }}
+                                        <br><span class="text-xs text-gray-400">{{ notif.date_creation|timesince }}</span>
+                                    </a>
+                                {% endfor %}
+                            {% else %}
+                                <p class="px-4 py-3 text-sm text-gray-500 italic">Aucune nouvelle notification.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="h-8 w-px bg-blue-700"></div>
+
+                <a href="{% url 'profil' %}" class="flex items-center space-x-3 hover:bg-blue-700 p-2 rounded-md transition duration-200">
+    <div class="w-10 h-10 rounded-full bg-white text-blue-800 flex items-center justify-center font-bold shadow-sm">
+        {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+    </div>
+    
+    <div class="hidden md:block text-left">
+        <p class="text-sm font-bold text-white leading-tight">
+            {{ request.user.first_name }} {{ request.user.last_name }}
+        </p>
+        <p class="text-xs text-blue-200 font-semibold tracking-wide uppercase">
+            {{ request.user.get_role_display }}
+        </p>
+    </div>
+</a>
+
+                <form method="post" action="{% url 'logout' %}" class="m-0 p-0">
+                    {% csrf_token %}
+                    <button type="submit" class="flex items-center text-blue-200 hover:text-red-400 font-medium transition duration-200 focus:outline-none">
+                        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                        <span class="hidden md:inline">Déconnexion</span>
+                    </button>
+                </form>
+
+            </div>
+            {% endif %}
+            
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-6 py-8">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="bg-gray-200 text-center py-4 text-sm text-gray-600 mt-auto border-t border-gray-300">
+        &copy; 2026 - Plateforme de Gestion des Conventions de Stage
+    </footer>
+
+</body>
+</html>

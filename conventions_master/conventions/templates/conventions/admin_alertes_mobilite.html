@@ -1,0 +1,37 @@
+{% extends "conventions/base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto mt-8">
+    <h2 class="text-2xl font-bold text-red-700 mb-6 flex items-center">
+        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        Alertes : Retours de Mobilité Attendus
+    </h2>
+
+    <div class="grid grid-cols-1 gap-4">
+        {% for alerte in alertes %}
+        <div class="bg-white border-l-4 border-red-500 shadow-sm p-5 flex justify-between items-center rounded-r-lg">
+            <div>
+                <h3 class="font-bold text-gray-900">{{ alerte.doctorant.get_full_name }}</h3>
+                <p class="text-sm text-gray-600">Mobilité à : <span class="font-medium">{{ alerte.laboratoire_accueil }}</span></p>
+                <p class="text-xs text-red-600 font-bold">Terminée le : {{ alerte.date_fin|date:"d/m/Y" }}</p>
+            </div>
+            
+            <div class="flex space-x-3">
+                <a href="mailto:{{ alerte.doctorant.email }}?subject=Retour de mobilité - LISAC&body=Bonjour {{ alerte.doctorant.last_name }}, votre mobilité est terminée depuis le {{ alerte.date_fin }}. Merci de déposer votre attestation de retour sur la plateforme." 
+                   class="bg-blue-100 text-blue-700 px-4 py-2 rounded-md text-sm font-bold hover:bg-blue-200 transition">
+                   📧 Contacter par Email
+                </a>
+                
+                <a href="{% url 'modifier_mobilite' alerte.id %}" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm font-bold hover:bg-gray-200 transition">
+                   📁 Ouvrir Dossier
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="bg-green-50 text-green-700 p-10 text-center rounded-lg border border-green-100">
+            ✅ Tous les doctorants ont déposé leurs retours à temps !
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
