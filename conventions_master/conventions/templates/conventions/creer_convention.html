@@ -1,34 +1,80 @@
-{% extends 'conventions/base.html' %}
-
-{% block title %}Nouvelle Convention{% endblock %}
+{% extends 'base.html' %}
 
 {% block content %}
-<div class="w-full max-w-2xl bg-white rounded-lg shadow-lg p-8 border border-gray-100">
-    <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Déposer une nouvelle convention</h2>
-    
-    <form method="post" enctype="multipart/form-data" class="space-y-6">
-        {% csrf_token %}
-        
-        <div class="bg-blue-50 p-4 rounded-md border border-blue-100">
-            <h3 class="text-lg font-semibold text-blue-800 mb-4">Informations de l'Entreprise</h3>
-            <div class="space-y-4">
-                {{ form_entreprise.as_p }}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h2 class="mb-4">Nouvelle demande de Convention</h2>
+            
+            <div class="alert alert-info shadow-sm">
+                <i class="bi bi-info-circle-fill"></i> 
+                Profil détecté : <strong>{{ profile.get_type_etudiant_display }}</strong> 
+                {% if profile.type_etudiant == 'DOCTORANT' %}
+                    en <strong>{{ profile.structure_recherche }}</strong>
+                {% else %}
+                    en <strong>{{ profile.filiere }}</strong>
+                {% endif %}
             </div>
-        </div>
 
-        <div class="bg-green-50 p-4 rounded-md border border-green-100">
-            <h3 class="text-lg font-semibold text-green-800 mb-4">Détails du Stage & Document</h3>
-            <div class="space-y-4">
-                {{ form_convention.as_p }}
-            </div>
-        </div>
+            <form method="post" enctype="multipart/form-data" class="card shadow-sm">
+                {% csrf_token %}
+                <div class="card-body">
+                    
+                    <h4 class="card-title text-primary border-bottom pb-2 mb-3">1. L'Entreprise d'Accueil</h4>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Nom de l'entreprise</label>
+                            {{ form_ent.nom }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">ICE (Optionnel)</label>
+                            {{ form_ent.ice }}
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label text-muted">Adresse</label>
+                            {{ form_ent.adresse }}
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label text-muted">Nom du Représentant</label>
+                            {{ form_ent.representant }}
+                        </div>
+                    </div>
 
-        <div class="flex justify-end pt-4">
-            <button type="submit"
-                class="bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2 px-6 rounded-md transition duration-200 shadow-md">
-                Soumettre la convention
-            </button>
+                    <h4 class="card-title text-primary border-bottom pb-2 mb-3 mt-4">2. Détails du Stage / Projet</h4>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Votre Filière</label>
+                            {{ form_conv.filiere }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Encadrant (Optionnel)</label>
+                            {{ form_conv.enseignant }}
+                            <small class="text-warning">Laissez vide si vous n'avez pas encore d'encadrant.</small>
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label text-muted">Sujet du stage</label>
+                            {{ form_conv.sujet_stage }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Date de début</label>
+                            {{ form_conv.date_debut }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Date de fin</label>
+                            {{ form_conv.date_fin }}
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label text-muted">Document (PDF de l'entreprise)</label>
+                            {{ form_conv.document_pdf }}
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 mt-3">
+                        Soumettre ma demande
+                    </button>
+                </div>
+            </form>
         </div>
-    </form>
+    </div>
 </div>
 {% endblock %}

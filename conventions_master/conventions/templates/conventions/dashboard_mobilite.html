@@ -4,7 +4,7 @@
 <div class="max-w-7xl mx-auto mt-8 px-4">
     
     <div class="flex justify-between items-center mb-8">
-        <h2 class="text-3xl font-bold text-gray-800">Gestion des Mobilités Doctorales</h2>
+        <h2 class="text-3xl font-bold text-gray-800">Gestion des Mobilités Étudiantes</h2>
         <a href="{% url 'ajouter_mobilite' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold shadow transition">
             + Nouvelle Mobilité
         </a>
@@ -15,7 +15,7 @@
             📁 Dossiers Actifs
         </a>
         <a href="?archives=1" class="px-4 py-2 rounded-lg {% if voir_archives %}bg-gray-600 text-white font-bold shadow{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %} transition">
-            📦 Archives
+            📦 Dossiers Clôturés
         </a>
     </div>
 
@@ -25,11 +25,11 @@
             
             <div class="flex-1 min-w-[250px]">
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Rechercher</label>
-                <input type="text" name="search" value="{{ query }}" placeholder="Nom du doctorant ou laboratoire..." 
+                <input type="text" name="search" value="{{ query }}" placeholder="Nom de l'étudiant ou établissement..." 
                        class="w-full border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
             </div>
             <div class="w-48">
-                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Année d'inscription</label>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Année au départ</label>
                 <select name="annee" class="w-full border-gray-300 rounded-lg">
                     <option value="">Toutes</option>
                     {% for a in annees_disponibles %}
@@ -46,10 +46,10 @@
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Doctorant</th>
+                    <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Étudiant</th>
                     <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Détails Mobilité</th>
                     <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Dates</th>
-                    <th class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase">Document</th>
+                    <th class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase">Statut & Fichier</th>
                     <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase">Actions</th>
                 </tr>
             </thead>
@@ -57,28 +57,39 @@
                 {% for m in mobilites %}
                 <tr class="hover:bg-gray-50 transition">
                     <td class="px-6 py-4">
-                        <div class="font-bold text-gray-900">{{ m.doctorant.get_full_name }}</div>
-                        <div class="text-xs text-gray-500">Inscrit en : {{ m.annee_premiere_inscription }}</div>
+                        <div class="font-bold text-gray-900">{{ m.etudiant.get_full_name }}</div>
+                        <div class="text-xs text-gray-500">{{ m.etudiant.role }} | Année départ: {{ m.annee_au_depart }}</div>
                     </td>
                     <td class="px-6 py-4">
-                        <div class="text-sm font-medium text-blue-700">{{ m.laboratoire_accueil }}</div>
-                        <div class="text-xs text-gray-500">{{ m.ville_pays }}</div>
+                        <div class="text-xs font-bold text-blue-600 mb-1">{{ m.get_type_mobilite_display }}</div>
+                        <div class="text-sm font-medium text-gray-900">{{ m.etablissement_accueil }}</div>
+                        <div class="text-xs text-gray-500">{{ m.destination }}</div>
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-600">
-                        {{ m.date_debut|date:"d/m/Y" }} - {{ m.date_fin|date:"d/m/Y" }}
+                        {{ m.date_debut|date:"d/m/Y" }} <br><span class="text-gray-400 text-xs">au</span><br> {{ m.date_fin|date:"d/m/Y" }}
                     </td>
                     <td class="px-6 py-4 text-center">
-                        {% if m.contrat_signe %}
-                        <a href="{{ m.contrat_signe.url }}" target="_blank" class="text-green-600 hover:text-green-800">
-                            <svg class="w-6 h-6 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" stroke-width="2"></path></svg>
-                        </a>
+                        
+                        {% if m.etat %}
+                            <span class="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded block mb-2">Clôturé</span>
                         {% else %}
-                        <span class="text-red-400 text-xs font-bold italic">Manquant</span>
+                            <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-1 rounded block mb-2">En cours</span>
                         {% endif %}
+
+                        {% if m.document_justificatif %}
+                            <a href="{{ m.document_justificatif.url }}" target="_blank" class="text-blue-500 hover:text-blue-700 text-xs flex justify-center items-center gap-1 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                Voir PDF
+                            </a>
+                        {% else %}
+                            <span class="text-gray-400 text-xs italic">Aucun fichier</span>
+                        {% endif %}
+
                     </td>
                     <td class="px-6 py-4 text-right space-x-1">
-                        <a href="{% url 'archiver_mobilite' m.id %}" title="{% if m.est_archive %}Restaurer{% else %}Archiver{% endif %}" 
-                           class="p-2 rounded-full inline-block transition {% if m.est_archive %}text-green-600 hover:bg-green-100{% else %}text-gray-400 hover:bg-gray-100{% endif %}">
+                        
+                        <a href="{% url 'archiver_mobilite' m.id %}" title="{% if m.etat %}Rouvrir le dossier{% else %}Clôturer le dossier{% endif %}" 
+                           class="p-2 rounded-full inline-block transition {% if m.etat %}text-green-600 hover:bg-green-100{% else %}text-gray-400 hover:bg-gray-100{% endif %}">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
                             </svg>
@@ -98,7 +109,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="py-10 text-center text-gray-400 italic">Aucun résultat trouvé.</td>
+                    <td colspan="5" class="py-10 text-center text-gray-400 italic">Aucune mobilité n'a été trouvée.</td>
                 </tr>
                 {% endfor %}
             </tbody>

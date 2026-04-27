@@ -1,6 +1,6 @@
 {% extends "conventions/base.html" %}
 
-{% block title %}Modifier Mobilité - {{ mobilite.doctorant.last_name }}{% endblock %}
+{% block title %}Modifier Mobilité - {{ mobilite.etudiant.last_name }}{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto mt-8 px-4">
@@ -13,33 +13,35 @@
     </div>
 
     <div class="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
-        <div class="bg-yellow-500 h-2 w-full"></div>
+        <div class="{% if mobilite.etat %}bg-green-500{% else %}bg-yellow-500{% endif %} h-2 w-full"></div>
         
         <form method="post" enctype="multipart/form-data" class="p-8">
             {% csrf_token %}
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div class="md:col-span-2 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Doctorant concerné</label>
-                    {{ form.doctorant }}
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Étudiant concerné</label>
+                    {{ form.etudiant }}
                 </div>
 
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Type de Convention</label>
-                    {{ form.type_convention }}
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Type de Mobilité</label>
+                    {{ form.type_mobilite }}
                 </div>
+                
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Année d'inscription</label>
-                    {{ form.annee_premiere_inscription }}
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Année d'étude au départ</label>
+                    {{ form.annee_au_depart }}
                 </div>
 
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Laboratoire d'accueil</label>
-                    {{ form.laboratoire_accueil }}
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Établissement d'accueil</label>
+                    {{ form.etablissement_accueil }}
                 </div>
+                
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Ville et Pays</label>
-                    {{ form.ville_pays }}
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Ville et Pays de destination</label>
+                    {{ form.destination }}
                 </div>
 
                 <div>
@@ -54,25 +56,25 @@
 
             <div class="space-y-6">
                 <div class="p-4 bg-blue-50 rounded-xl border border-blue-100">
-                    <label class="block text-sm font-bold text-blue-900 mb-2">Contrat de mobilité (PDF)</label>
-                    {% if mobilite.contrat_signe %}
+                    <label class="block text-sm font-bold text-blue-900 mb-2">Justificatif de mobilité (PDF)</label>
+                    {% if mobilite.document_justificatif %}
                         <div class="mb-3 flex items-center text-xs text-blue-700 font-medium">
                             <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"></path></svg>
-                            Document actuel enregistré
+                            <a href="{{ mobilite.document_justificatif.url }}" target="_blank" class="underline hover:text-blue-900">Voir le document actuel</a>
                         </div>
                     {% endif %}
-                    {{ form.contrat_signe }}
+                    {{ form.document_justificatif }}
                 </div>
 
-                <div class="p-4 bg-orange-50 rounded-xl border border-orange-100 flex items-start">
-                    <div class="flex items-center h-5">
-                        {{ form.est_archive }}
-                    </div>
-                    <div class="ml-3 text-sm">
-                        <label for="{{ form.est_archive.id_for_label }}" class="font-bold text-orange-900">Archiver le dossier</label>
-                        <p class="text-orange-700">Cochez cette case pour classer ce dossier dans les archives une fois la mobilité terminée.</p>
-                    </div>
+                <div class="md:col-span-2 mt-6 p-4 border border-blue-200 bg-blue-50 rounded-lg">
+                <div class="flex items-center space-x-3">
+                    {{ form.etat }}
+                    <label for="{{ form.etat.id_for_label }}" class="text-sm font-bold text-blue-900 cursor-pointer">
+                        Marquer le dossier comme traité / clôturé
+                        <p class="text-xs text-blue-700 font-normal mt-1">Cochez cette case si la mobilité est terminée et que le dossier administratif est complet.</p>
+                    </label>
                 </div>
+            </div>
             </div>
 
             <div class="mt-10 pt-6 border-t border-gray-100 flex justify-end space-x-4">

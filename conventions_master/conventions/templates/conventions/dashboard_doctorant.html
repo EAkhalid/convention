@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Tableau de Bord Doctorant : {{ user.get_full_name }}</h2>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">Statut Académique</div>
+        <div class="card-body">
+            <p><strong>Structure :</strong> {{ user.profile.structure_recherche }}</p>
+            <p><strong>Année actuelle :</strong> 
+                {% if inscription %}
+                    {{ inscription.numero_reinscription }}ère/ème année ({{ inscription.annee_universitaire }})
+                {% else %}
+                    <span class="text-danger">Non inscrit</span>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <h3>📚 Formations Recommandées</h3>
+            <ul class="list-group">
+                {% for formation in formations_disponibles %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ formation.titre }}
+                        {% if formation.obligatoire %}<span class="badge bg-danger">Obligatoire</span>{% endif %}
+                    </li>
+                {% empty %}
+                    <p>Aucune formation spécifique pour votre année actuelle.</p>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="col-md-6">
+            <h3>🏆 Mes Notes</h3>
+            <table class="table">
+                <thead><tr><th>Formation</th><th>Note</th></tr></thead>
+                <tbody>
+                    {% for p in participations %}
+                    <tr>
+                        <td>{{ p.formation.titre }}</td>
+                        <td>{{ p.note|default:"--" }}/20</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

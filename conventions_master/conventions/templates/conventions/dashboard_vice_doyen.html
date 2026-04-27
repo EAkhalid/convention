@@ -3,6 +3,22 @@
 {% block title %}Espace Vice-Doyen - Validation Finale{% endblock %}
 
 {% block content %}
+
+
+<script>
+    const ctx = document.getElementById('filiereChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: {{ noms_filieres|safe }},
+            datasets: [{
+                data: {{ comptes_filieres|safe }},
+                backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545']
+            }]
+        }
+    });
+</script>
+  <canvas id="filiereChart"></canvas>
 <div class="w-full max-w-5xl bg-white rounded-lg shadow-lg p-8 border border-gray-100">
     <h2 class="text-2xl font-bold text-gray-800 mb-8 border-b-4 border-yellow-500 pb-4 uppercase tracking-wider">
         Direction - Validation Finale des Conventions

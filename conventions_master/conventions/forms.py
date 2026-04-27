@@ -1,90 +1,101 @@
 from django import forms
-from .models import *
+from django.contrib.auth import get_user_model
+from .models import (
+    CustomUser, 
+    Entreprise, 
+    Convention, 
+    ConventionMobilite, 
+    Mobilite
+)
 
+User = get_user_model()
 
+# --- Classes CSS Tailwind réutilisables ---
+INPUT_CLASSES = 'w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+CHECKBOX_CLASSES = 'w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer'
+FILE_CLASSES = 'w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer'
 
-class ConventionForm(forms.ModelForm):
+class UserProfileForm(forms.ModelForm):
+    """Formulaire pour la mise à jour du profil (Nom, Email, Signature)"""
     class Meta:
-        model = Convention
-        # Ajoute bien 'filiere' et 'enseignant' à ta liste de champs
-        fields = ['filiere', 'enseignant', 'document_pdf'] # (+ tes autres champs existants)
-        
-    def __init__(self, *args, **kwargs):
-        super(ConventionForm, self).__init__(*args, **kwargs)
-        # On indique visuellement à l'étudiant que l'encadrant n'est pas obligatoire
-        if 'enseignant' in self.fields:
-            self.fields['enseignant'].required = False
-            self.fields['enseignant'].empty_label = "--- Aucun encadrant pour le moment ---"
+        model = CustomUser
+        fields = ['first_name', 'last_name', 'email', 'signature_image']
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': INPUT_CLASSES}),
+            'last_name': forms.TextInput(attrs={'class': INPUT_CLASSES}),
+            'email': forms.EmailInput(attrs={'class': INPUT_CLASSES}),
+            'signature_image': forms.ClearableFileInput(attrs={'class': FILE_CLASSES}),
+        }
 
 class EntrepriseForm(forms.ModelForm):
+    """Formulaire pour l'entreprise accueillant le stagiaire"""
     class Meta:
         model = Entreprise
         fields = ['nom', 'adresse', 'representant', 'ice']
-
-
-from django.contrib.auth import get_user_model
-CustomUser = get_user_model()
-
-class UserProfileForm(forms.ModelForm):
-    class Meta:
-        model = CustomUser
-        fields = ['first_name', 'last_name', 'signature_image']
-        labels = {
-            'first_name': 'Prénom',
-            'last_name': 'Nom',
-            'signature_image': 'Image de votre signature (Format PNG transparent recommandé)'
-        }
         widgets = {
-            'first_name': forms.TextInput(attrs={'class': 'w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600'}),
-            'last_name': forms.TextInput(attrs={'class': 'w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600'}),
-            'signature_image': forms.ClearableFileInput(attrs={'class': 'w-full px-4 py-2 border rounded-md text-gray-700 bg-gray-50'}),
+            'nom': forms.TextInput(attrs={'class': INPUT_CLASSES, 'placeholder': 'Nom de l\'entreprise'}),
+            'adresse': forms.Textarea(attrs={'class': INPUT_CLASSES, 'rows': 3}),
+            'representant': forms.TextInput(attrs={'class': INPUT_CLASSES, 'placeholder': 'Nom du signataire'}),
+            'ice': forms.TextInput(attrs={'class': INPUT_CLASSES, 'placeholder': 'Ex: 0015... (Optionnel)'}),
         }
 
-    # NOUVEAU : On modifie l'initialisation du formulaire
-    def __init__(self, *args, **kwargs):
-        # On extrait l'utilisateur passé en paramètre (s'il existe)
-        self.user = kwargs.pop('user', None)
-        super(UserProfileForm, self).__init__(*args, **kwargs)
-        
-        # Si l'utilisateur est un étudiant, on supprime carrément le champ signature
-        if self.user and self.user.role == 'ETUDIANT':
-            if 'signature_image' in self.fields:
-                del self.fields['signature_image']
-
-
-
-
-
-class ConventionMobiliteForm(forms.ModelForm):
+class ConventionForm(forms.ModelForm):
+    """Formulaire pour la création de convention par l'étudiant"""
     class Meta:
-        model = ConventionMobilite  # <-- C'EST CETTE LIGNE QUI MANQUE
-        fields = [
-            'doctorant',
-            'type_convention',
-           
-            'laboratoire_accueil', 
-            'ville_pays', 
-            'date_debut', 
-            'date_fin', 
-            'est_archive',
-            'contrat_signe'
-        ]
+        model = Convention
+        fields = ['filiere', 'enseignant', 'sujet_stage', 'date_debut', 'date_fin', 'document_pdf']
         widgets = {
-            'doctorant': forms.Select(attrs={'class': 'select2-doctorant w-full w-full p-2 border border-gray-300 rounded select2'}),
-            'type_convention': forms.Select(attrs={'class': 'w-full p-2 border rounded bg-white shadow-sm'}),
-           
-            'laboratoire_accueil': forms.TextInput(attrs={'class': 'w-full p-2 border border-gray-300 rounded'}),
-            'ville_pays': forms.TextInput(attrs={'class': 'w-full p-2 border border-gray-300 rounded'}),
-            'date_debut': forms.DateInput(attrs={'type': 'date', 'class': 'w-full p-2 border border-gray-300 rounded'}),
-            'date_fin': forms.DateInput(attrs={'type': 'date', 'class': 'w-full p-2 border border-gray-300 rounded'}),
-            'contrat_signe': forms.FileInput(attrs={'class': 'w-full p-2 border border-gray-300 rounded bg-gray-50'}),
-            'est_archive': forms.CheckboxInput(attrs={
-                'class': 'w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500'
-            }),
+            'filiere': forms.Select(attrs={'class': INPUT_CLASSES}),
+            'enseignant': forms.Select(attrs={'class': INPUT_CLASSES}),
+            'sujet_stage': forms.TextInput(attrs={'class': INPUT_CLASSES, 'placeholder': 'Sujet du stage'}),
+            'date_debut': forms.DateInput(attrs={'class': INPUT_CLASSES, 'type': 'date'}),
+            'date_fin': forms.DateInput(attrs={'class': INPUT_CLASSES, 'type': 'date'}),
+            'document_pdf': forms.ClearableFileInput(attrs={'class': FILE_CLASSES}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # On filtre pour n'afficher que les utilisateurs ayant le rôle ETUDIANT
-        self.fields['doctorant'].queryset = CustomUser.objects.filter(role='DOCTORANT')
-        self.fields['doctorant'].label_from_instance = lambda obj: f"{obj.last_name} {obj.first_name}"
+        # On limite le champ enseignant à ceux qui ont le rôle 'ENSEIGNANT'
+        self.fields['enseignant'].queryset = CustomUser.objects.filter(role='ENSEIGNANT', is_active=True)
+        self.fields['enseignant'].empty_label = "--- Aucun encadrant pour le moment ---"
+        self.fields['document_pdf'].required = True
+
+
+
+
+class MobiliteForm(forms.ModelForm):
+    """Formulaire général pour les mobilités (lié directement à CustomUser)"""
+    class Meta:
+        model = Mobilite
+        fields = [
+            'etudiant', 
+            'type_mobilite', 
+            'destination', 
+            'etablissement_accueil',
+            'date_debut', 
+            'date_fin', 
+            'document_justificatif', 
+            'etat'
+        ]
+        widgets = {
+            'etudiant': forms.Select(attrs={'class': INPUT_CLASSES + ' select2'}),
+            'type_mobilite': forms.Select(attrs={'class': INPUT_CLASSES}),
+            'destination': forms.TextInput(attrs={'class': INPUT_CLASSES, 'placeholder': 'Ex: Paris, France'}),
+            'etablissement_accueil': forms.TextInput(attrs={'class': INPUT_CLASSES, 'placeholder': 'Nom de l\'université ou du laboratoire'}),
+            'date_debut': forms.DateInput(attrs={'class': INPUT_CLASSES, 'type': 'date'}),
+            'date_fin': forms.DateInput(attrs={'class': INPUT_CLASSES, 'type': 'date'}),
+            'document_justificatif': forms.ClearableFileInput(attrs={'class': FILE_CLASSES}),
+            'etat': forms.CheckboxInput(attrs={'class': CHECKBOX_CLASSES}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Filtre intelligent : on n'affiche que les utilisateurs actifs qui sont des étudiants
+        self.fields['etudiant'].queryset = CustomUser.objects.filter(
+            role__in=['DOCTORANT', 'MASTER', 'LICENCE'], 
+            is_active=True
+        ).order_by('last_name')
+        
+        # Rend le document facultatif dans le formulaire (sécurité supplémentaire)
+        self.fields['document_justificatif'].required = False

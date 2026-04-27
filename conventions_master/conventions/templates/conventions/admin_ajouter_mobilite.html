@@ -1,79 +1,118 @@
-{% extends "conventions/base.html" %}
+{% extends 'conventions/base.html' %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto mt-8">
-    <div class="bg-white shadow-lg rounded-lg border-t-4 border-red-600">
-        <div class="p-6 border-b border-gray-100">
-            <h2 class="text-2xl font-bold text-gray-800">Administration : Enregistrer une Mobilité</h2>
-            <p class="text-sm text-gray-500">Formulaire réservé à l'insertion manuelle des dossiers de mobilité doctorale.</p>
+<style>
+    /* Force l'affichage et le style des widgets Django */
+    select, input[type="text"], input[type="date"], input[type="number"], input[type="file"] {
+        display: block !important;
+        width: 100% !important;
+        background-color: rgba(255, 255, 255, 0.8) !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 0.75rem !important;
+        padding: 0.75rem 1rem !important;
+        color: #1e293b !important;
+    }
+
+    .dark select, .dark input {
+        background-color: #1e293b !important;
+        border-color: #334155 !important;
+        color: #f1f5f9 !important;
+    }
+
+    .select2-container .select2-selection--single {
+        height: 48px !important;
+        border-radius: 0.75rem !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+</style>
+
+<main class="flex-grow container mx-auto px-6 py-8">
+    <div class="max-w-4xl mx-auto mt-16 px-4 pb-20" data-aos="fade-up">
+        <div class="glass rounded-3xl overflow-hidden shadow-2xl border border-white/20 dark:border-slate-700/50">
+            
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-6 text-white">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center">
+                        <i class="fas fa-plane-departure text-2xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold tracking-tight">Nouvelle Mobilité</h2>
+                        <p class="text-indigo-100 text-sm">Enregistrez les détails de la mobilité doctorale</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-8 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+                <form method="post" enctype="multipart/form-data" class="space-y-8">
+                    {% csrf_token %}
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        
+                        <div class="space-y-2">
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Sélectionner l'Étudiant</label>
+                            {{ form.etudiant }} 
+                            <p class="text-xs text-slate-500 italic mt-1 px-1">Recherchez par nom ou prénom.</p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Type de Mobilité</label>
+                            {{ form.type_mobilite }}
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Établissement d'accueil</label>
+                            {{ form.etablissement_accueil }}
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Ville / Pays de destination</label>
+                            {{ form.destination }}
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Date de départ</label>
+                            {{ form.date_debut }}
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Date de retour prévue</label>
+                            {{ form.date_fin }}
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Année d'étude au départ</label>
+                            {{ form.annee_au_depart }}
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 ml-1">Document Justificatif (PDF)</label>
+                            <div class="p-4 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30">
+                                {{ form.document_justificatif }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end space-x-4 pt-8 border-t border-slate-100 dark:border-slate-800 mt-10">
+                        <a href="/administration/mobilites/" class="px-6 py-3 rounded-xl font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">Annuler</a>
+                        <button type="submit" class="bg-slate-950 dark:bg-white text-white dark:text-slate-900 px-8 py-3.5 rounded-xl font-bold shadow-xl hover:-translate-y-0.5 transition-all">
+                            <i class="fas fa-save mr-2"></i> Enregistrer la mobilité
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
-
-        <form method="post" enctype="multipart/form-data" class="p-8">
-            {% csrf_token %}
-               <script>
-            $(document).ready(function() {
-                // Initialise la recherche sur le champ doctorant
-                $('.select2-doctorant').select2({
-                    placeholder: "🔍 Rechercher un doctorant par nom...",
-                    allowClear: true,
-                    width: '100%'
-                });
-            });
-            </script>
-</div>
-            <div class="grid grid-cols-1 gap-y-6">
-                <div class="bg-red-50 p-4 rounded-lg border border-red-100">
-                    <label class="block text-sm font-bold text-red-900 mb-1">Sélectionner le Doctorant <span class="text-red-500">*</span></label>
-                    {{ form.doctorant }}
-                </div>
-                <div class="mb-6">
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Type de Convention de Mobilité <span class="text-red-500">*</span></label>
-                    {{ form.type_convention }}
-                    {% if form.type_convention.errors %}
-                        <p class="text-red-500 text-xs mt-1">{{ form.type_convention.errors.0 }}</p>
-                    {% endif %}
-                    <p class="text-xs text-gray-400 mt-1 italic">Sélectionnez le cadre de la mobilité (ex: Erasmus, Co-tutelle, etc.)</p>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Année de 1ère inscription</label>
-                        {{ form.annee_premiere_inscription }}
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Laboratoire d'accueil</label>
-                        {{ form.laboratoire_accueil }}
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Ville et Pays</label>
-                        {{ form.ville_pays }}
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Contrat final (PDF signé)</label>
-                        {{ form.contrat_signe }}
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Date de début</label>
-                        {{ form.date_debut }}
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Date de fin</label>
-                        {{ form.date_fin }}
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-8 pt-6 border-t flex justify-end">
-                <button type="submit" class="bg-red-600 text-white px-8 py-3 rounded-md font-bold hover:bg-red-700 shadow-lg transition">
-                    Valider et Enregistrer le dossier
-                </button>
-            </div>
-        </form>
     </div>
- 
+</main>
+
+<script>
+    $(document).ready(function() {
+        // Cibler l'ID généré par Django pour le champ 'etudiant'
+        if ($.fn.select2) {
+            $('#id_etudiant').select2({
+                placeholder: "🔍 Cherchez un étudiant...",
+                width: '100%'
+            });
+        }
+    });
+</script>
 {% endblock %}
