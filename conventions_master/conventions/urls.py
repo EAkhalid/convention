@@ -34,5 +34,6 @@ urlpatterns = [
     path('administration/mobilites/supprimer/<int:pk>/',supprimer_mobilite, name='supprimer_mobilite'),
     path('administration/mobilites/archiver/<int:pk>/', archiver_mobilite, name='archiver_mobilite'),
     path('administration/mobilites/modifier/<int:pk>/', modifier_mobilite, name='modifier_mobilite'),
+    path('releve-notes/', generer_releve_notes, name='releve_notes'),
 ]
 

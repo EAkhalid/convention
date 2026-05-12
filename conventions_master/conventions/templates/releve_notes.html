@@ -1,0 +1,61 @@
+<form method="GET" style="margin-bottom: 30px; text-align: center;" class="no-print">
+    <input type="text" name="cne" placeholder="Entrez le CNE de l'étudiant" required>
+    <button type="submit">Générer le relevé</button>
+</form>
+
+{% if student %}
+<div id="releve-container" style="width: 21cm; margin: auto; border: 1px solid #ccc; padding: 20px; font-family: Arial;">
+    <div style="text-align: center; font-weight: bold;">
+        CED-STSM<br>
+        Faculté des Sciences - Dhar Mahraz
+        <h1 style="text-decoration: underline; margin-top: 20px;">Attestation</h1>
+    </div>
+
+    <div style="margin-top: 30px; line-height: 1.6;">
+        <p><strong>Nom/Prénom :</strong> {{ student.user.last_name }} {{ student.user.first_name }}</p>
+        <p><strong>CNE :</strong> {{ student.CNE }}</p>
+        <p><strong>Formation Doctorale :</strong> Sciences et Techniques</p>
+        <p><strong>Année de 1ère inscription :</strong> {{ student.PAI }}</p>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; text-align: center;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="border: 1px solid black; padding: 5px;">N°</th>
+                <th style="border: 1px solid black; padding: 5px;">Module</th>
+                <th style="border: 1px solid black; padding: 5px;">VH</th>
+                <th style="border: 1px solid black; padding: 5px;">Note</th>
+                <th style="border: 1px solid black; padding: 5px;">Résultat</th>
+                <th style="border: 1px solid black; padding: 5px;">Crédits</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in participations %}
+            <tr>
+                <td style="border: 1px solid black;">{{ forloop.counter }}</td>
+                <td style="border: 1px solid black; text-align: left; padding-left: 5px;">{{ p.session.formation.titre }}</td>
+                <td style="border: 1px solid black;">40h</td> <td style="border: 1px solid black;">{{ p.note|floatformat:2 }}</td>
+                <td style="border: 1px solid black;">
+                    {% if p.note >= 10 or p.presence %}Validé{% else %}-{% endif %}
+                </td>
+                <td style="border: 1px solid black;">3</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div style="margin-top: 50px; text-align: right; padding-right: 50px;">
+        <strong>Signature</strong>
+    </div>
+</div>
+
+<div style="text-align: center; margin-top: 20px;">
+    <button onclick="window.print()" class="no-print">Imprimer / Sauvegarder en PDF</button>
+</div>
+
+<style>
+    @media print {
+        .no-print { display: none; }
+    }
+</style>
+{% endif %}

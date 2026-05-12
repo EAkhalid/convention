@@ -568,3 +568,29 @@ def supprimer_mobilite(request, pk):
         messages.success(request, f"La mobilité de {nom_doctorant} a été supprimée définitivement.")
         
     return redirect('dashboard_mobilite')
+
+
+from django.shortcuts import render, get_object_or_404
+from .models import StudentProfile, ParticipationFormation, InscriptionDoctorat
+
+def generer_releve_notes(request):
+    cne = request.GET.get('cne')
+    context = {}
+    
+    if cne:
+        # 1. On cherche l'étudiant par son CNE
+        student = get_object_or_404(StudentProfile, CNE=cne)
+        
+        # 2. On récupère toutes ses participations (ses notes)
+        participations = ParticipationFormation.objects.filter(student=student).select_related('session__formation')
+        
+        # 3. On récupère sa dernière inscription pour avoir l'année de 1ère inscription
+        # On peut aussi utiliser student.PAI directement
+        
+        context = {
+            'student': student,
+            'participations': participations,
+            'date_edition': datetime.now(),
+        }
+        
+    return render(request, 'releve_notes.html', context)
