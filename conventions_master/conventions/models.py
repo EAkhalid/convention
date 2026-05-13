@@ -100,7 +100,14 @@ class InscriptionDoctorat(models.Model):
 class FormationDoctorale(models.Model):
     titre = models.CharField(max_length=255, unique=True, verbose_name="Titre de la formation")
     description = models.TextField(blank=True)
-    
+    credits = models.PositiveIntegerField(
+        default=0, 
+        verbose_name="Nombre de Crédits (ECTS)"
+    )
+    volume_horaire = models.PositiveIntegerField(
+        default=0, 
+        verbose_name="Volume Horaire (VH) en heures"
+    )
     cible_1ere_annee = models.BooleanField(default=True, verbose_name="1ère Année")
     cible_2eme_annee = models.BooleanField(default=False, verbose_name="2ème Année")
     cible_3eme_annee = models.BooleanField(default=False, verbose_name="3ème Année")
@@ -154,60 +161,110 @@ class SessionFormation(models.Model):
         # 2. Si c'est une nouvelle session, on lance les inscriptions
         if is_new:
             self.generer_inscriptions_automatiques()
-
     def generer_inscriptions_automatiques(self):
-        from .models import ParticipationFormation, StudentProfile
+        from .models import ParticipationFormation, InscriptionDoctorat, SessionFormation
         from django.db.models import Q
 
-        # 1. Extraction de l'année (ex: 2025)
+        # =========================================================
+        # 1. RÉCUPÉRATION DE L'ANNÉE DE LA SESSION ACTUELLE
+        # =========================================================
         try:
-            annee_base = int(self.annee_universitaire.split('/')[0])
-            # Si l'utilisateur écrit "25/26", on transforme "25" en 2025
-            if annee_base < 100:
-                annee_base += 2000
-        except:
+            valeur_saisie = str(self.annee_universitaire).strip()
+            if '/' in valeur_saisie:
+                annee_fin = int(valeur_saisie.split('/')[1])
+            else:
+                annee_fin = int(valeur_saisie) + 1 
+            
+            if annee_fin < 100: annee_fin += 2000
+        except Exception:
             return
 
-        # 2. FILTRE CRUCIAL : Uniquement les profils dont l'utilisateur a le rôle 'DOCTORANT'
-        doctorants = StudentProfile.objects.filter(user__role='DOCTORANT')
+        annee_debut = str(annee_fin - 1)
+        annee_debut_courte = annee_debut[2:]
 
-        participations_a_creer = []
+        inscriptions_actives = InscriptionDoctorat.objects.filter(
+            Q(annee_universitaire__startswith=annee_debut) | 
+            Q(annee_universitaire__startswith=annee_debut_courte),
+            est_valide=True
+        ).select_related('student', 'student__user')
+
         catalogue = self.formation
+        participations_a_creer = []
 
-        for student in doctorants:
-            # Sécurité PAI
-            pai_str = str(student.PAI).strip().replace('.0', '')
-            if not pai_str.isdigit():
+        # =========================================================
+        # 2. DÉTECTION AUTOMATIQUE DE L'ANNÉE DE LANCEMENT (NOUVEAU)
+        # =========================================================
+        # On cherche toutes les sessions historiques de ce module
+        sessions_historiques = SessionFormation.objects.filter(formation=catalogue)
+        annees_debut_historiques = []
+        
+        for s in sessions_historiques:
+            try:
+                s_annee = str(s.annee_universitaire).strip()
+                if '/' in s_annee:
+                    a_deb = int(s_annee.split('/')[0])  # Ex: "2023" pour "2023/2024"
+                else:
+                    a_deb = int(s_annee)
+                if a_deb < 100: a_deb += 2000
+                annees_debut_historiques.append(a_deb)
+            except:
+                pass
+
+        # L'année de lancement est la plus petite année trouvée !
+        annee_lancement_module = min(annees_debut_historiques) if annees_debut_historiques else 0
+
+        min_annee_cible = None
+        if catalogue.cible_1ere_annee: min_annee_cible = 1
+        elif catalogue.cible_2eme_annee: min_annee_cible = 2
+        elif catalogue.cible_3eme_annee: min_annee_cible = 3
+        elif catalogue.cible_4eme_annee_plus: min_annee_cible = 4
+
+        # =========================================================
+        # 3. BOUCLE D'ANALYSE ET D'INSCRIPTION
+        # =========================================================
+        for ins in inscriptions_actives:
+            student = ins.student
+            
+            if student.user.is_superuser or student.id == 1:
+                continue
+
+            try:
+                pai_int = int(float(str(student.PAI).strip()))
+            except:
                 continue
             
-            pai_int = int(pai_str)
-            est_concerne = False
+            annee_etude = annee_fin - pai_int
+            if annee_etude < 1: 
+                continue
 
-            # --- Logique des Cibles ---
-            if catalogue.cible_1ere_annee and pai_int == annee_base:
-                est_concerne = True
-            elif catalogue.cible_2eme_annee and pai_int == (annee_base - 1):
-                est_concerne = True
-            elif catalogue.cible_3eme_annee and pai_int == (annee_base - 2):
-                est_concerne = True
-            elif catalogue.cible_4eme_annee_plus and pai_int <= (annee_base - 3):
-                est_concerne = True
+            doit_passer_module = False
 
-            # --- Logique Rattrapage ---
-            if not est_concerne and pai_int < annee_base:
+            # --- RÈGLE A : LE FLUX NORMAL ---
+            if (catalogue.cible_1ere_annee and annee_etude == 1) or \
+               (catalogue.cible_2eme_annee and annee_etude == 2) or \
+               (catalogue.cible_3eme_annee and annee_etude == 3) or \
+               (catalogue.cible_4eme_annee_plus and annee_etude >= 4):
+                doit_passer_module = True
+
+            # --- RÈGLE B : LE RATTRAPAGE & NON-RÉTROACTIVITÉ ---
+            elif min_annee_cible and annee_etude > min_annee_cible:
+                # La règle magique : le PAI doit être supérieur ou égal à l'année de lancement dynamique
+                if pai_int >= annee_lancement_module:
+                    doit_passer_module = True
+
+            # --- RÈGLE C : VÉRIFICATION DE LA VALIDATION ---
+            if doit_passer_module:
                 deja_valide = ParticipationFormation.objects.filter(
-                    student=student,
-                    session__formation=catalogue
-                ).filter(Q(presence=True) | Q(note__gte=10.0)).exists()
+                    student=student, session__formation=catalogue
+                ).exclude(session=self).filter(Q(presence=True) | Q(note__gte=10.0)).exists()
 
                 if not deja_valide:
-                    est_concerne = True
+                    participations_a_creer.append(ParticipationFormation(student=student, session=self, note=0.0))
 
-            if est_concerne:
-                participations_a_creer.append(
-                    ParticipationFormation(student=student, session=self, note=0.0)
-                )
-
+        # =========================================================
+        # 4. SAUVEGARDE EN BASE DE DONNÉES
+        # =========================================================
+        ParticipationFormation.objects.filter(session=self).delete()
         if participations_a_creer:
             ParticipationFormation.objects.bulk_create(participations_a_creer, ignore_conflicts=True)
 class ParticipationFormation(models.Model):

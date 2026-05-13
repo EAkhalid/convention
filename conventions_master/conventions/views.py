@@ -568,29 +568,38 @@ def supprimer_mobilite(request, pk):
         messages.success(request, f"La mobilité de {nom_doctorant} a été supprimée définitivement.")
         
     return redirect('dashboard_mobilite')
-
-
+ 
 from django.shortcuts import render, get_object_or_404
-from .models import StudentProfile, ParticipationFormation, InscriptionDoctorat
+from django.http import HttpResponseBadRequest
+from .models import StudentProfile, ParticipationFormation
 
 def generer_releve_notes(request):
-    cne = request.GET.get('cne')
-    context = {}
+    # 1. On récupère le CNE depuis l'URL (?cne=...)
+    cne_saisi = request.GET.get('cne')
     
-    if cne:
-        # 1. On cherche l'étudiant par son CNE
-        student = get_object_or_404(StudentProfile, CNE=cne)
-        
-        # 2. On récupère toutes ses participations (ses notes)
-        participations = ParticipationFormation.objects.filter(student=student).select_related('session__formation')
-        
-        # 3. On récupère sa dernière inscription pour avoir l'année de 1ère inscription
-        # On peut aussi utiliser student.PAI directement
-        
-        context = {
-            'student': student,
-            'participations': participations,
-            'date_edition': datetime.now(),
-        }
-        
-    return render(request, 'releve_notes.html', context)
+    # Si aucun CNE n'est fourni dans l'URL
+    if not cne_saisi:
+        return HttpResponseBadRequest("Erreur : Veuillez fournir un numéro CNE/Massar valide.")
+
+    # 2. On récupère le profil de l'étudiant basé sur son CNE
+    # (On utilise first() au cas où, ou get_object_or_404 si le CNE est unique)
+    student = get_object_or_404(StudentProfile, CNE=cne_saisi)
+    
+    # 3. On récupère uniquement les modules VALIDÉS (Note >= 10)
+    modules_valides = ParticipationFormation.objects.filter(
+        student=student, 
+        note__gte=10.0
+    ).select_related('session', 'session__formation').order_by('session__annee_universitaire')
+
+    # 4. Calcul des totaux
+    total_credits = sum(part.session.formation.credits for part in modules_valides)
+    total_vh = sum(part.session.formation.volume_horaire for part in modules_valides)
+
+    context = {
+        'student': student,
+        'modules': modules_valides,
+        'total_credits': total_credits,
+        'total_vh': total_vh,
+    }
+    
+    return render(request, 'conventions/releve_notes.html', context)

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Relevé de Notes - {{ student.user.last_name }}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            color: #333;
+            line-height: 1.6;
+            margin: 40px auto;
+            max-width: 800px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 20px;
+        }
+        .header h1 { font-size: 24px; text-transform: uppercase; margin: 5px 0; }
+        .header h2 { font-size: 18px; color: #555; margin: 5px 0; }
+        
+        .student-info {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+            border: 1px solid #eee;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #2c3e50;
+            color: white;
+            font-size: 14px;
+        }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        
+        .totals {
+            font-weight: bold;
+            background-color: #f1f1f1;
+        }
+        .signature-box {
+            margin-top: 50px;
+            text-align: right;
+            padding-right: 50px;
+        }
+        
+        /* Cacher les éléments inutiles à l'impression */
+        @media print {
+            .btn-print { display: none; }
+            body { margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Université Sidi Mohamed Ben Abdellah - Fès</h1>
+        <h2>Faculté des Sciences - Centre d'Études Doctorales</h2>
+        <h2 style="margin-top: 20px; color: #2c3e50;">RELEVÉ DE NOTES ET DE FORMATIONS</h2>
+    </div>
+
+   <div class="student-info">
+        <p><strong>Nom & Prénom :</strong> {{ student.user.last_name|upper }} {{ student.user.first_name }}</p>
+        <p><strong>CNE / Massar :</strong> {{ student.CNE|default:"Non renseigné" }}</p>
+        <p><strong>Année de première inscription (PAI) :</strong> {{ student.PAI }}</p>
+        <!-- Remplacement de LISAC par la donnée dynamique de la base de données -->
+        <p><strong>Filière / Laboratoire :</strong> {{ student.filiere.nom|default:"Non renseigné" }}</p>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Année Univ.</th>
+                <th>Intitulé de la Formation</th>
+                <th class="text-center">Note /20</th>
+                <th class="text-center">Crédits</th>
+                <th class="text-center">Volume Horaire</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for part in modules %}
+            <tr>
+                <td>{{ part.session.annee_universitaire }}</td>
+                <td>{{ part.session.formation.titre }}</td>
+                <td class="text-center">{{ part.note|floatformat:2 }}</td>
+                <td class="text-center">{{ part.session.formation.credits }}</td>
+                <td class="text-center">{{ part.session.formation.volume_horaire }} h</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">Aucune formation validée pour le moment.</td>
+            </tr>
+            {% endfor %}
+            
+            <tr class="totals">
+                <td colspan="3" class="text-right">TOTAL ACQUIS :</td>
+                <td class="text-center">{{ total_credits }}</td>
+                <td class="text-center">{{ total_vh }} h</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="signature-box">
+        <p>Fait à Fès, le {% now "d/m/Y" %}</p>
+        <p><strong>Le Directeur du CEDoc</strong></p>
+    </div>
+
+    <div style="text-align: center; margin-top: 40px;">
+        <button class="btn-print" onclick="window.print()" style="padding: 10px 20px; cursor: pointer; background: #2c3e50; color: white; border: none; border-radius: 4px;">
+            🖨️ Imprimer le relevé
+        </button>
+    </div>
+
+</body>
+</html>
